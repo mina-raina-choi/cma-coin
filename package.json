@@ -1,0 +1,10 @@
+{
+  "name": "cma-coin",
+  "version": "1.0.0",
+  "description": "cma-coin made by NodeJS",
+  "main": "src/server.js",
+  "repository": "https://github.com/minami-choi/cma-coin.git",
+  "author": "minami-choi <cmina2846@gmail.com>",
+  "license": "MIT",
+  "private": false
+}
