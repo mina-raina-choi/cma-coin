@@ -12,18 +12,18 @@ class Block {
 }
 
 // 2. genesis block은 하드코딩
-// 첫번째 블록해시로 01570555253933This is the genesis!! 을 해시한 값을 넣어준다
+// 첫번째 블록해시로 01570595637361This is the genesis!! 을 해시한 값을 넣어준다
 const genesisBlock = new Block(
   0,
-  "49366cfdf758988a6d44037ea8827e018044b7e41aae84cf02356ffbbbd62e88",
+  "dc90cc2eb3ea0dff4fcf6c0b9fe0954cb8bbe050ebee9d0402ca31551766466d",
   null,
-  new Date().getTime() / 1000,
+  1570595637361,
   "This is the genesis!!"
 );
 
 let blockchain = [genesisBlock];
 
-console.log(blockchain);
+// console.log(blockchain);
 
 // todo 함수형으로 작성
 // 4. 가장최근 블록 가져오기
@@ -40,7 +40,7 @@ const getBlockchain = () => blockchain;
 
 // 6. 해시함수
 const createHash = (index, prevHash, timestamp, data) =>
-  CryptoJS.SHA256(index + prevHash + timestamp + data);
+  CryptoJS.SHA256(index + prevHash + timestamp + data).toString();
 
 // 3. 함수만들기
 const createNewBlock = data => {
@@ -48,7 +48,14 @@ const createNewBlock = data => {
   const newBlockIndex = prevBlock.index + 1;
   const newTimeStamp = getTimeStamp();
   const newHash = createHash(newBlockIndex, prevBlock.hash, newTimeStamp, data);
-
+  console.log(
+    "newHAsh",
+    newHash,
+    newBlockIndex,
+    prevBlock.hash,
+    newTimeStamp,
+    data
+  );
   const newBlock = new Block(
     newBlockIndex,
     newHash,
@@ -56,17 +63,14 @@ const createNewBlock = data => {
     newTimeStamp,
     data
   );
+
+  addBlockToChain(newBlock);
   return newBlock;
 };
 
 // 8. 검증에 사용할 블록해시
 const getBlocksHash = block =>
-  createHash(
-    block.index,
-    block.prevHash,
-    block.timestamp,
-    JSON.stringify(block.data)
-  );
+  createHash(block.index, block.prevHash, block.timestamp, block.data);
 
 // 9. 블록 구조 검증(각데이터의 타입검증)
 const isNewStructureValid = block => {
@@ -85,7 +89,11 @@ const isNewBlockValid = (candidateBlock, latestBlock) => {
     console.log("The candidate block structure is not valid");
     return false;
   } else if (latestBlock.index + 1 !== candidateBlock.index) {
-    console.log("The candidate block doesn't have a valid index");
+    console.log(
+      "The candidate block doesn't have a valid index",
+      latestBlock.index,
+      candidateBlock.index
+    );
     return false;
   } else if (latestBlock.hash !== candidateBlock.prevHash) {
     console.log(
@@ -93,7 +101,11 @@ const isNewBlockValid = (candidateBlock, latestBlock) => {
     );
     return false;
   } else if (getBlocksHash(candidateBlock) !== candidateBlock.hash) {
-    console.log("The hash of this block is invalid");
+    console.log(
+      "The hash of this block is invalid",
+      getBlocksHash(candidateBlock),
+      candidateBlock
+    );
     return false;
   }
   return true;
@@ -137,10 +149,21 @@ const replaceChain = candidateChain => {
 
 // 12. 새로운블록 체인에 추가하기
 const addBlockToChain = candidateBlock => {
-  if (isNewBlockValid(candidateBlock, getLastBlock)) {
+  if (isNewBlockValid(candidateBlock, getLastBlock())) {
     getBlockchain().push(candidateBlock);
     return true;
   } else {
     return false;
   }
 };
+
+// http://happinessoncode.com/2018/05/20/nodejs-exports-and-module-exports/
+
+// If you want to export a complete object in one assignment instead of building it one property at a time, assign it to module.exports
+module.exports = {
+  getBlockchain,
+  createNewBlock
+};
+
+// exports.getBlockchain = getBlockchain;
+// exports.createNewBlock = createNewBlock;
