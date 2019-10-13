@@ -241,11 +241,22 @@ const isChainValid = candidateChain => {
   return true;
 };
 
+// 난이도가 추가됐으므로
+// 난이도를 감안해서!! replace chain
+// [3,4,4,5,6]
+// difficulty를 가져와서 제곱
+const sumDifficulty = anyBlockchain =>
+  anyBlockchain
+    .map(block => block.difficulty)
+    .map(difficulty => Math.pow(2, difficulty))
+    .reduce((a, b) => a + b);
+
 // 11. 만약 새로 들어온 체인이 유효하다면 replace해주는 기능필요
 const replaceChain = candidateChain => {
   if (
     isChainValid(candidateChain) &&
-    candidateChain.length > getBlockchain().length
+    sumDifficulty(candidateChain) > sumDifficulty(getBlockchain())
+    // candidateChain.length > getBlockchain().length
   ) {
     blockchain = candidateChain;
     return true;
