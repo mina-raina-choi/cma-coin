@@ -27,9 +27,9 @@ let blockchain = [genesisBlock];
 
 // todo 함수형으로 작성
 // 4. 가장최근 블록 가져오기
-const getLastBlock = () => blockchain[blockchain.length - 1];
+const getNewestBlock = () => blockchain[blockchain.length - 1];
 // 아래함수를 ES6로 나타내면 위와 같이
-// function getLastBlock() {
+// function getNewestBlock() {
 //     return blockchain[blockchain.length - 1]
 // }
 
@@ -44,7 +44,7 @@ const createHash = (index, prevHash, timestamp, data) =>
 
 // 3. 함수만들기
 const createNewBlock = data => {
-  const prevBlock = getLastBlock();
+  const prevBlock = getNewestBlock();
   const newBlockIndex = prevBlock.index + 1;
   const newTimeStamp = getTimeStamp();
   const newHash = createHash(newBlockIndex, prevBlock.hash, newTimeStamp, data);
@@ -73,7 +73,7 @@ const getBlocksHash = block =>
   createHash(block.index, block.prevHash, block.timestamp, block.data);
 
 // 9. 블록 구조 검증(각데이터의 타입검증)
-const isNewStructureValid = block => {
+const isBlockStructureValid = block => {
   return (
     typeof block.index === "number" &&
     typeof block.hash === "string" &&
@@ -84,8 +84,8 @@ const isNewStructureValid = block => {
 };
 
 // 7. 블록 유효성 검증
-const isNewBlockValid = (candidateBlock, latestBlock) => {
-  if (!isNewStructureValid) {
+const isBlockValid = (candidateBlock, latestBlock) => {
+  if (!isBlockStructureValid) {
     console.log("The candidate block structure is not valid");
     return false;
   } else if (latestBlock.index + 1 !== candidateBlock.index) {
@@ -127,7 +127,7 @@ const isChainValid = candidateChain => {
   }
 
   for (let i = 1; i < candidateChain.length; i++) {
-    if (!isNewBlockValid(candidateChain[i], candidateChain[i - 1])) {
+    if (!isBlockValid(candidateChain[i], candidateChain[i - 1])) {
       return false;
     }
   }
@@ -149,7 +149,7 @@ const replaceChain = candidateChain => {
 
 // 12. 새로운블록 체인에 추가하기
 const addBlockToChain = candidateBlock => {
-  if (isNewBlockValid(candidateBlock, getLastBlock())) {
+  if (isBlockValid(candidateBlock, getNewestBlock())) {
     getBlockchain().push(candidateBlock);
     return true;
   } else {
@@ -163,7 +163,10 @@ const addBlockToChain = candidateBlock => {
 module.exports = {
   getBlockchain,
   createNewBlock,
-  getLastBlock
+  getNewestBlock,
+  isBlockStructureValid,
+  addBlockToChain,
+  replaceChain
 };
 
 // exports.getBlockchain = getBlockchain;
