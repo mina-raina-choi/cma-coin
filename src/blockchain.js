@@ -49,7 +49,7 @@ const createNewBlock = data => {
   const newTimeStamp = getTimeStamp();
   const newHash = createHash(newBlockIndex, prevBlock.hash, newTimeStamp, data);
   console.log(
-    "newHAsh",
+    "newHash",
     newHash,
     newBlockIndex,
     prevBlock.hash,
@@ -65,6 +65,10 @@ const createNewBlock = data => {
   );
 
   addBlockToChain(newBlock);
+  //   체인에 추가한 뒤 브로드캐스트
+  //   상단에 import를 하면 circular dependency error발생
+  // blockchain.js -> p2p.js -> blockchain.js
+  require("./p2p").broadcastNewBlock();
   return newBlock;
 };
 

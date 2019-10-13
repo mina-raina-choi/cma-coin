@@ -152,7 +152,10 @@ const handleBlockchainResponse = receivedBlocks => {
     //   ahead
     if (newestBlock.hash === latestBlockReceived.prevHash) {
       // 1 block ahead
-      addBlockToChain(latestBlockReceived);
+      if (addBlockToChain(latestBlockReceived)) {
+        //  체인에 블록이 잘 연결됐다면
+        broadcastNewBlock();
+      }
     } else if (receivedBlocks.length === 1) {
       // to do, get all the blocks, we are way behind
       //   모두에게 블록을 달라고 요청, 소켓에 다 요청
@@ -168,6 +171,9 @@ const handleBlockchainResponse = receivedBlocks => {
   }
 };
 
+// 연결된 모든 소켓에 나의 최신블록을 알림
+const broadcastNewBlock = () => sendMessageToAll(responseLatest());
+
 // newPeer is URL that websocket is running on
 const connectToPeers = newPeer => {
   const ws = new WebSockets(newPeer);
@@ -179,5 +185,6 @@ const connectToPeers = newPeer => {
 
 module.exports = {
   startP2PServer,
-  connectToPeers
+  connectToPeers,
+  broadcastNewBlock
 };
