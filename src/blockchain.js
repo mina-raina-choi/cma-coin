@@ -162,7 +162,8 @@ const addBlockToChain = candidateBlock => {
 // If you want to export a complete object in one assignment instead of building it one property at a time, assign it to module.exports
 module.exports = {
   getBlockchain,
-  createNewBlock
+  createNewBlock,
+  getLastBlock
 };
 
 // exports.getBlockchain = getBlockchain;
