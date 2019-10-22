@@ -1,4 +1,7 @@
 const CryptoJS = require("crypto-js"),
+  EC = require("elliptic").ec
+
+const ec = new EC("secp256k1")
 
 class TxOut {
   constructor(address, amount) {
@@ -23,6 +26,7 @@ class Transaction {
 class UTxOut {
   constructor(uTxOutId, uTxOutIndex, address, amount) {
     this.uTxOutId = uTxOutId
+    // index가 왜 또 필요한지는 아직 모르겠음
     this.uTxOutIndex = uTxOutIndex
     this.address = address
     this.amount = amount
@@ -32,7 +36,6 @@ class UTxOut {
 const uTxOuts = []
 
 const getTxId = tx => {
-    
   // 인풋의 id + index를 가져와서 문자열을 계속 합쳐준다.
   const txInContent = tx.txIns
     .map(txIn => txIn.uTxOutId + txIn.uTxOutIndex)
@@ -43,8 +46,18 @@ const getTxId = tx => {
     .map(txOut => txOut.address + txOut.amount)
     .reduce((a, b) => a + b, "")
 
-    
+  // 트랜잭션 데이터를 해시한 값 = txid
   return CryptoJS.SHA256(txInContent + txOutContent).toString()
 }
 
-
+const signTxIn = (tx, txInIndex, privateKey, uTxOut) => {
+  // 인풋은 여러개가 있을 수 있다. 그중에서 사용할 input을 input index를 사용해 선택
+  const txIn = tx.txIns[txInIndex]
+  const dataToSign = tx.id
+  // todo Find utxo
+  const referenceduTxOut = null
+  if (referenceduTxOut === null) {
+    // no money
+    return
+  }
+}
