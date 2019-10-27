@@ -189,6 +189,8 @@ const validateTxIn = (txIn, tx, uTxOutList) => {
   }
 }
 
+const getAmountInTxIn = (txIn, uTxOutList) => findUTxOut(txIn.id, txIn.index, uTxOutList).amount
+
 const validateTx = (tx, uTxOutList) => {
   if (getTxId(tx) !== tx.id) {
     return false
@@ -200,9 +202,11 @@ const validateTx = (tx, uTxOutList) => {
     return false
   }
 
-  const amountInTxIns = 0 // todo
+  const amountInTxIns = tx.txIns
+    .map(txIn => getAmountInTxIn(txIn, uTxOutList))
+    .reduce((a, b) => a + b, 0)
 
-  const amountInTxOuts = 0 // todo
+  const amountInTxOuts = tx.txOuts.map(txOut => txOut.amount).reduce((a, b) => a + b, 0)
 
   if (amountInTxIns !== amountInTxOuts) {
     return false
