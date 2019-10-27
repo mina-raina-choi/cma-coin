@@ -1,6 +1,7 @@
 const CryptoJS = require("crypto-js"),
-  EC = require("elliptic").ec
-utils = require("./utils")
+  EC = require("elliptic").ec,
+  utils = require("./utils"),
+  _ = require("lodash")
 
 const ec = new EC("secp256k1")
 
@@ -86,12 +87,12 @@ const getPublicKey = privateKey => {
 }
 
 // 이 블록체인이 갖고있는 UTxOutList, 위에 선언된 uTxOuts와 같은것
-const updateUTxOuts = (newTxs, UTxOutList) => {
+const updateUTxOuts = (newTxs, uTxOutList) => {
   // 새로운 txs의 outs를 utxos 리스트로 만든다.
   const newUTxOuts = newTxs
     .map(tx => {
-      tx.txOuts.map((txOut, index) => {
-        new UTxOut(tx.id, index, txOut.address, txOut.amount)
+      return tx.txOuts.map((txOut, index) => {
+        return new UTxOut(tx.id, index, txOut.address, txOut.amount)
       })
     })
     .reduce((a, b) => a.concat(b), [])
@@ -234,17 +235,26 @@ const validateTx = (tx, uTxOutList) => {
 // coinbase validate (블록보상으로 마이너에게 가는것)
 const validateCoinBaseTx = (tx, blockIndex) => {
   if (getTxId(tx) !== tx.id) {
+    console.log("Invalid Coinbase tx ID")
     return false
   } else if (tx.txIns.length !== 1) {
     // 코인베이스 트랜잭션은 1개뿐 - 블록체인에서 오는 것
+    console.log("Coinbase TX should only have one input")
+
     return false
   } else if (tx.txIns[0].txOutIndex !== blockIndex) {
+    console.log("The txOutIndex of the Coinbase Tx should be the same as the Block Index")
     // 코인베이스 트랜잭션은 참조할 utxo가 없기때문에, txOutIndex를 블록인덱스로 참조한다.
     return false
   } else if (tx.txOuts.length !== 1) {
     // 아웃풋은 채굴자에게. 채굴자는 1명
+    console.log("Coinbase TX should only have one output")
+
     return false
   } else if (tx.txOuts[0].amount !== COINBASE_AMOUNT) {
+    console.log(
+      `Coinbase TX should have an amount of only ${COINBASE_AMOUNT} and it has ${tx.txOuts[0].amount}`
+    )
     return false
   } else {
     return true
@@ -255,11 +265,62 @@ const createCoinbaseTx = (address, blockIndex) => {
   const tx = new Transaction()
   const txIn = new TxIn()
   txIn.signature = ""
-  txIn.txOutId = blockIndex
+  txIn.txOutId = ""
+  txIn.txOutIndex = blockIndex
   tx.txIns = [txIn]
   tx.txOuts = [new TxOut(address, COINBASE_AMOUNT)]
   tx.id = getTxId(tx)
   return tx
+}
+
+// double spending을 막기위해
+const hasDuplicates = txIns => {
+  // txid + vout을 그룹핑
+  const groups = _.countBy(txIns, txIn => txIn.txOutId + txIn.txOutIndex)
+  return (
+    _(groups)
+      .map(value => {
+        if (value > 1) {
+          // duplicate!!
+          console.log("Found a duplicated txIn")
+          return true
+        } else {
+          return false
+        }
+      })
+      // [true, false, true, ....]
+      .includes(true)
+  )
+}
+
+const validateBlockTx = (txs, uTxOutList, blockIndex) => {
+  const coinbaseTx = txs[0]
+  if (!validateCoinBaseTx(coinbaseTx, blockIndex)) {
+    console.log("Coinbase Tx is invalid")
+    return false
+  }
+
+  const txIns = _(txs)
+    .map(tx => tx.txIns)
+    .flatten()
+    .value()
+
+  // check if the txIns are duplicated
+  if (hasDuplicates(txIns)) {
+    console.log("Found duplicated txIns")
+    return false
+  }
+
+  // 배열의 첫번째값 제외한 배열
+  const nonCoinbaseTxs = txs.slice(1)
+  return nonCoinbaseTxs.map(tx => validateTx(tx, uTxOutList)).reduce((a, b) => a && b, true)
+}
+
+const processTxs = (txs, uTxOutList, blockIndex) => {
+  if (!validateBlockTx(txs, uTxOutList, blockIndex)) {
+    return null
+  }
+  return updateUTxOuts(txs, uTxOutList)
 }
 
 module.exports = {
@@ -269,5 +330,6 @@ module.exports = {
   TxIn,
   TxOut,
   Transaction,
-  createCoinbaseTx
+  createCoinbaseTx,
+  processTxs
 }

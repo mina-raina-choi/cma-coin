@@ -4,7 +4,7 @@ const CryptoJS = require("crypto-js"),
   Transaction = require("./transactions")
 
 const { getBalance, getPublicFromWallet } = Wallet
-const { createCoinbaseTx } = Transaction
+const { createCoinbaseTx, processTxs } = Transaction
 
 //   블록생성주기 10초
 const BLOCK_GENERATION_INTERVAL = 10
@@ -37,6 +37,8 @@ const genesisBlock = new Block(
 )
 
 let blockchain = [genesisBlock]
+
+let uTxOuts = []
 
 // console.log(blockchain);
 
@@ -258,12 +260,23 @@ const replaceChain = candidateChain => {
 // 12. 새로운블록 체인에 추가하기
 const addBlockToChain = candidateBlock => {
   if (isBlockValid(candidateBlock, getNewestBlock())) {
-    getBlockchain().push(candidateBlock)
+    // 트랜잭션 유효성검증추가
+    const processedTxs = processTxs(candidateBlock.data, uTxOuts, candidateBlock.index)
+    if (processedTxs === null) {
+      console.log("Couldn't process txs")
+      return false
+    } else {
+      getBlockchain().push(candidateBlock)
+      uTxOuts = processedTxs
+      return true
+    }
     return true
   } else {
     return false
   }
 }
+
+const getAccountBalance = () => getBalance(getPublicFromWallet(), uTxOuts)
 
 // http://happinessoncode.com/2018/05/20/nodejs-exports-and-module-exports/
 
@@ -275,7 +288,8 @@ module.exports = {
   getNewestBlock,
   isBlockStructureValid,
   addBlockToChain,
-  replaceChain
+  replaceChain,
+  getAccountBalance
 }
 
 // exports.getBlockchain = getBlockchain;

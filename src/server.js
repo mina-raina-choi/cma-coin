@@ -5,7 +5,7 @@ const express = require("express"),
   P2P = require("./p2p"),
   wallet = require("./wallet")
 
-const { getBlockchain, createNewBlock } = Blockchain
+const { getBlockchain, createNewBlock, getAccountBalance } = Blockchain
 const { startP2PServer, connectToPeers } = P2P
 const { initWallet } = wallet
 
@@ -35,6 +35,11 @@ app.post("/peers", (req, res) => {
   } = req
   connectToPeers(peer)
   res.send()
+})
+
+app.get("/me/balance", (req, res) => {
+  const balance = getAccountBalance()
+  res.send({ balance })
 })
 
 const server = app.listen(PORT, () => console.log(`cma-coin HTTP Server running on ${PORT}`))
