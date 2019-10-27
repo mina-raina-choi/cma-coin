@@ -24,10 +24,11 @@ class Transaction {
 }
 
 class UTxOut {
-  constructor(uTxOutId, uTxOutIndex, address, amount) {
-    this.uTxOutId = uTxOutId
-    // index가 왜 또 필요한지는 아직 모르겠음
-    this.uTxOutIndex = uTxOutIndex
+  constructor(txOutId, txOutIndex, address, amount) {
+    // txid
+    this.txOutId = txOutId
+    // vout
+    this.txOutIndex = txOutIndex
     this.address = address
     this.amount = amount
   }
@@ -50,14 +51,19 @@ const getTxId = tx => {
   return CryptoJS.SHA256(txInContent + txOutContent).toString()
 }
 
+// utxo를 갖고 있는지 체크
+const findUTxOut = (txOutId, txOutIndex, uTxOutList) => {
+  return uTxOutList.find(uTxOut => uTxOut.txOutId === txOutId && uTxOut.txOutIndex === txOutIndex)
+}
+
 const signTxIn = (tx, txInIndex, privateKey, uTxOut) => {
   // 인풋은 여러개가 있을 수 있다. 그중에서 사용할 input을 input index를 사용해 선택
   const txIn = tx.txIns[txInIndex]
   const dataToSign = tx.id
-  // todo Find utxo
-  const referenceduTxOut = null
+  const referenceduTxOut = findUTxOut(txIn.txOutId, txIn.txOutIndex, uTxOuts)
   if (referenceduTxOut === null) {
     // no money
     return
   }
+  // todo Sign the Txin
 }
