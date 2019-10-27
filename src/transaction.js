@@ -4,6 +4,8 @@ utils = require("./utils")
 
 const ec = new EC("secp256k1")
 
+const COINBASE_AMOUNT = 50
+
 class TxOut {
   constructor(address, amount) {
     this.address = address
@@ -192,6 +194,9 @@ const validateTxIn = (txIn, tx, uTxOutList) => {
 const getAmountInTxIn = (txIn, uTxOutList) => findUTxOut(txIn.id, txIn.index, uTxOutList).amount
 
 const validateTx = (tx, uTxOutList) => {
+  if (!isTxStructureValid(tx)) {
+    return false
+  }
   if (getTxId(tx) !== tx.id) {
     return false
   }
@@ -209,6 +214,26 @@ const validateTx = (tx, uTxOutList) => {
   const amountInTxOuts = tx.txOuts.map(txOut => txOut.amount).reduce((a, b) => a + b, 0)
 
   if (amountInTxIns !== amountInTxOuts) {
+    return false
+  } else {
+    return true
+  }
+}
+
+// coinbase validate (블록보상으로 마이너에게 가는것)
+const validateCoinBaseTx = (tx, blockIndex) => {
+  if (getTxId(tx) !== tx.id) {
+    return false
+  } else if (tx.txIns.length !== 1) {
+    // 코인베이스 트랜잭션은 1개뿐 - 블록체인에서 오는 것
+    return false
+  } else if (tx.txIns[0].txOutIndex !== blockIndex) {
+    // 코인베이스 트랜잭션은 참조할 utxo가 없기때문에, txOutIndex를 블록인덱스로 참조한다.
+    return false
+  } else if (tx.txOuts.length !== 1) {
+    // 아웃풋은 채굴자에게. 채굴자는 1명
+    return false
+  } else if (tx.txOuts[0].amount !== COINBASE_AMOUNT) {
     return false
   } else {
     return true
