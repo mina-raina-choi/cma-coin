@@ -175,3 +175,38 @@ const isTxStructureValid = tx => {
     return true
   }
 }
+
+const validateTxIn = (txIn, tx, uTxOutList) => {
+  const wantedTxOut = uTxOutList.find(
+    uTxOut => uTxOut.txOutId == txIn.txOutId && uTxOut.txOutIndex === txIn.txOutIndex
+  )
+  if (wantedTxOut === null) {
+    return false
+  } else {
+    const address = wantedTxOut.address
+    const key = ec.keyFromPublic(address, "hex")
+    return key.verify(tx.id, txIn.signature)
+  }
+}
+
+const validateTx = (tx, uTxOutList) => {
+  if (getTxId(tx) !== tx.id) {
+    return false
+  }
+
+  const hasValidTxIns = tx.txIns.map(txIn => validateTxIn(txIn, uTxOutList))
+
+  if (!hasValidTxIns) {
+    return false
+  }
+
+  const amountInTxIns = 0 // todo
+
+  const amountInTxOuts = 0 // todo
+
+  if (amountInTxIns !== amountInTxOuts) {
+    return false
+  } else {
+    return true
+  }
+}
