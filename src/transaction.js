@@ -68,10 +68,21 @@ const signTxIn = (tx, txInIndex, privateKey, uTxOut) => {
     // no money
     return
   }
-  // todo Sign the Txin
+  // 사용하려는 주소의 주인이 "나"인지 체크
+  const referencedAddress = referenceduTxOut.address
+  if (getPublicKey(privateKey) !== referencedAddress) {
+    return false
+  }
   const key = ec.keyFromPrivate(privateKey, "hex")
   const signature = utils.toHexString(key.sign(dataToSign).toDER())
   return signature
+}
+
+const getPublicKey = privateKey => {
+  return ec
+    .keyFromPrivate(privateKey, "hex")
+    .getPublic()
+    .encode("hex")
 }
 
 // 이 블록체인이 갖고있는 UTxOutList, 위에 선언된 uTxOuts와 같은것

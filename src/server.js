@@ -2,8 +2,8 @@ const express = require("express"),
   bodyParser = require("body-parser"),
   morgan = require("morgan"),
   Blockchain = require("./blockchain"),
-  P2P = require("./p2p")
-wallet = require("./wallet")
+  P2P = require("./p2p"),
+  wallet = require("./wallet")
 
 const { getBlockchain, createNewBlock } = Blockchain
 const { startP2PServer, connectToPeers } = P2P
