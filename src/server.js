@@ -21,11 +21,11 @@ app.get("/blocks", (req, res) => {
 })
 
 app.post("/blocks", (req, res) => {
-  const { data } = req.body
+  // const { data } = req.body
   //   const {
   //     body: { data }
   //   } = req;
-  const newBlock = createNewBlock(data)
+  const newBlock = createNewBlock()
   res.send(newBlock)
 })
 

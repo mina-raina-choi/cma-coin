@@ -1,5 +1,10 @@
 const CryptoJS = require("crypto-js"),
-  hexToBinary = require("hex-to-binary")
+  hexToBinary = require("hex-to-binary"),
+  Wallet = require("./wallet"),
+  Transaction = require("./transactions")
+
+const { getBalance, getPublicFromWallet } = Wallet
+const { createCoinbaseTx } = Transaction
 
 //   블록생성주기 10초
 const BLOCK_GENERATION_INTERVAL = 10
@@ -54,8 +59,14 @@ const createHash = (index, prevHash, timestamp, data, difficulty, nonce) =>
     index + prevHash + timestamp + JSON.stringify(data) + difficulty + nonce
   ).toString()
 
+const createNewBlock = () => {
+  const coinbaseTx = createCoinbaseTx(getPublicFromWallet(), getNewestBlock().index + 1)
+  const blockData = [coinbaseTx]
+  return createNewRawBlock(blockData)
+}
+
 // 3. 함수만들기
-const createNewBlock = data => {
+const createNewRawBlock = data => {
   const prevBlock = getNewestBlock()
   const newBlockIndex = prevBlock.index + 1
   const newTimeStamp = getTimeStamp()
@@ -158,7 +169,7 @@ const isBlockStructureValid = block => {
     typeof block.hash === "string" &&
     typeof block.prevHash === "string" &&
     typeof block.timestamp === "number" &&
-    typeof block.data === "string"
+    typeof block.data === "object"
   )
 }
 
@@ -259,6 +270,7 @@ const addBlockToChain = candidateBlock => {
 // If you want to export a complete object in one assignment instead of building it one property at a time, assign it to module.exports
 module.exports = {
   getBlockchain,
+  createNewRawBlock,
   createNewBlock,
   getNewestBlock,
   isBlockStructureValid,

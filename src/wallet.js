@@ -4,25 +4,24 @@ const elliptic = require("elliptic").ec,
   _ = require("lodash"),
   Transactions = require("./transactions")
 
-const { getPublicKey, getTxId, signTxIn, TxIn, TxOut, Transaction } = Transactions
-
+const { getPublicKey, getTxId, signTxIn, TxIn, Transaction, TxOut } = Transactions
 const ec = new elliptic("secp256k1")
 
 const privateKeyLocation = path.join(__dirname, "privateKey")
 
 const generatePrivateKey = () => {
   const keyPair = ec.genKeyPair()
-  const privatekey = keyPair.getPrivate()
-  return privatekey.toString(16)
+  const privateKey = keyPair.getPrivate()
+  return privateKey.toString(16)
 }
 
-const getPrivateKeyFromWallet = () => {
+const getPrivateFromWallet = () => {
   const buffer = fs.readFileSync(privateKeyLocation, "utf-8")
-  buffer.toString()
+  return buffer.toString()
 }
 
 const getPublicFromWallet = () => {
-  const privateKey = getPrivateKeyFromWallet()
+  const privateKey = getPrivateFromWallet()
   const key = ec.keyFromPrivate(privateKey, "hex")
   return key.getPublic().encode("hex")
 }
@@ -96,5 +95,7 @@ const createTx = (receiverAddress, amount, privateKey, uTxOutList) => {
 }
 
 module.exports = {
-  initWallet
+  initWallet,
+  getBalance,
+  getPublicFromWallet
 }
