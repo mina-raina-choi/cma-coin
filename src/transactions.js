@@ -15,8 +15,8 @@ class TxOut {
 
 // utxo : 아직 사용하지 않은 아웃풋
 class TxIn {
-  // uTxOutId
-  // uTxOutIndex
+  // txOutId
+  // txOutIndex
   // signature
 }
 
@@ -59,11 +59,11 @@ const findUTxOut = (txOutId, txOutIndex, uTxOutList) => {
   return uTxOutList.find(uTxOut => uTxOut.txOutId === txOutId && uTxOut.txOutIndex === txOutIndex)
 }
 
-const signTxIn = (tx, txInIndex, privateKey, uTxOut) => {
+const signTxIn = (tx, txInIndex, privateKey, uTxOutList) => {
   // 인풋은 여러개가 있을 수 있다. 그중에서 사용할 input을 input index를 사용해 선택
   const txIn = tx.txIns[txInIndex]
   const dataToSign = tx.id
-  const referenceduTxOut = findUTxOut(txIn.txOutId, txIn.txOutIndex, uTxOuts)
+  const referenceduTxOut = findUTxOut(txIn.txOutId, txIn.txOutIndex, uTxOutList)
   if (referenceduTxOut === null) {
     // no money
     return
@@ -249,4 +249,13 @@ const validateCoinBaseTx = (tx, blockIndex) => {
   } else {
     return true
   }
+}
+
+module.exports = {
+  getPublicKey,
+  getTxId,
+  signTxIn,
+  TxIn,
+  TxOut,
+  Transaction
 }
