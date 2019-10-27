@@ -50,10 +50,11 @@ const findAmountInUTxOuts = (amountNeeded, myUTxOuts) => {
     currentAmount = currentAmount + myUTxOut.amount
     if (currentAmount >= amountNeeded) {
       const leftoverAmount = currentAmount - amountNeeded
+      // console.log("findAmountInUTxOuts", leftoverAmount, currentAmount, amountNeeded)
       return { includedUTxOuts, leftoverAmount }
     }
   }
-  console.log("Not enough founds")
+  throw Error("Not enough funds")
   return false
 }
 
@@ -69,33 +70,38 @@ const createTxOuts = (receiverAddress, myAddress, amount, leftoverAmount) => {
 
 const createTx = (receiverAddress, amount, privateKey, uTxOutList) => {
   const myAddress = getPublicKey(privateKey)
-  // 내소유의 utxo
   const myUTxOuts = uTxOutList.filter(uTxO => uTxO.address === myAddress)
 
   const { includedUTxOuts, leftoverAmount } = findAmountInUTxOuts(amount, myUTxOuts)
 
-  const toUnsignedTxIns = uTxOut => {
+  const toUnsignedTxIn = uTxOut => {
     const txIn = new TxIn()
     txIn.txOutId = uTxOut.txOutId
     txIn.txOutIndex = uTxOut.txOutIndex
+    return txIn
   }
 
-  const unsignedTxIns = includedUTxOuts.map(toUnsignedTxIns)
+  const unsignedTxIns = includedUTxOuts.map(toUnsignedTxIn)
 
   const tx = new Transaction()
+
   tx.txIns = unsignedTxIns
   tx.txOuts = createTxOuts(receiverAddress, myAddress, amount, leftoverAmount)
 
-  tx.id = getTxId(tx.txIns, tx.txOuts)
+  tx.id = getTxId(tx)
 
   tx.txIns = tx.txIns.map((txIn, index) => {
     txIn.signature = signTxIn(tx, index, privateKey, uTxOutList)
     return txIn
   })
+
+  return tx
 }
 
 module.exports = {
   initWallet,
   getBalance,
-  getPublicFromWallet
+  getPublicFromWallet,
+  createTx,
+  getPrivateFromWallet
 }

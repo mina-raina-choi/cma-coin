@@ -1,10 +1,13 @@
 const CryptoJS = require("crypto-js"),
+  _ = require("lodash"),
   hexToBinary = require("hex-to-binary"),
   Wallet = require("./wallet"),
-  Transaction = require("./transactions")
+  Transaction = require("./transactions"),
+  Mempool = require("./mempool")
 
-const { getBalance, getPublicFromWallet } = Wallet
+const { getBalance, getPublicFromWallet, createTx, getPrivateFromWallet } = Wallet
 const { createCoinbaseTx, processTxs } = Transaction
+const { addToMempool } = Mempool
 
 //   블록생성주기 10초
 const BLOCK_GENERATION_INTERVAL = 10
@@ -276,7 +279,16 @@ const addBlockToChain = candidateBlock => {
   }
 }
 
+// uTxOuts의 깊은 복사본
+const getUTxOutList = () => _.cloneDeep(uTxOuts)
+
 const getAccountBalance = () => getBalance(getPublicFromWallet(), uTxOuts)
+
+const sendTx = (address, amount) => {
+  const tx = createTx(address, amount, getPrivateFromWallet(), getUTxOutList())
+  addToMempool(tx, getUTxOutList())
+  return tx
+}
 
 // http://happinessoncode.com/2018/05/20/nodejs-exports-and-module-exports/
 
@@ -289,7 +301,8 @@ module.exports = {
   isBlockStructureValid,
   addBlockToChain,
   replaceChain,
-  getAccountBalance
+  getAccountBalance,
+  sendTx
 }
 
 // exports.getBlockchain = getBlockchain;

@@ -43,7 +43,7 @@ const uTxOuts = []
 const getTxId = tx => {
   // 인풋의 id + index를 가져와서 문자열을 계속 합쳐준다.
   const txInContent = tx.txIns
-    .map(txIn => txIn.uTxOutId + txIn.uTxOutIndex)
+    .map(txIn => txIn.txOutId + txIn.txOutIndex)
     .reduce((a, b) => a + b, "")
 
   // 아웃풋의 address, amount를 계속 합쳐준다.
@@ -64,17 +64,19 @@ const signTxIn = (tx, txInIndex, privateKey, uTxOutList) => {
   // 인풋은 여러개가 있을 수 있다. 그중에서 사용할 input을 input index를 사용해 선택
   const txIn = tx.txIns[txInIndex]
   const dataToSign = tx.id
-  const referenceduTxOut = findUTxOut(txIn.txOutId, txIn.txOutIndex, uTxOutList)
-  if (referenceduTxOut === null) {
+  const referencedUTxOut = findUTxOut(txIn.txOutId, txIn.txOutIndex, uTxOutList)
+  if (referencedUTxOut === null || referencedUTxOut === undefined) {
     // no money
+    throw Error("Couldn't find the referenced uTxOut, not signing")
     return
   }
   // 사용하려는 주소의 주인이 "나"인지 체크
-  const referencedAddress = referenceduTxOut.address
+  const referencedAddress = referencedUTxOut.address
   if (getPublicKey(privateKey) !== referencedAddress) {
     return false
   }
   const key = ec.keyFromPrivate(privateKey, "hex")
+  console.log("dataToSign", dataToSign)
   const signature = utils.toHexString(key.sign(dataToSign).toDER())
   return signature
 }
@@ -148,6 +150,7 @@ const isAddressValid = address => {
 }
 
 const isTxOutStructureValid = txOut => {
+  console.log("isTxOutStructureValid", txOut)
   if (txOut === null) {
     return false
   } else if (typeof txOut.address !== "string") {
@@ -192,9 +195,11 @@ const isTxStructureValid = tx => {
 
 const validateTxIn = (txIn, tx, uTxOutList) => {
   const wantedTxOut = uTxOutList.find(
-    uTxOut => uTxOut.txOutId == txIn.txOutId && uTxOut.txOutIndex === txIn.txOutIndex
+    uTxO => uTxO.txOutId === txIn.txOutId && uTxO.txOutIndex === txIn.txOutIndex
   )
+
   if (wantedTxOut === null) {
+    console.log(`Didn't find the wanted uTxOut, the tx: ${tx} is invalid`)
     return false
   } else {
     const address = wantedTxOut.address
@@ -213,9 +218,10 @@ const validateTx = (tx, uTxOutList) => {
     return false
   }
 
-  const hasValidTxIns = tx.txIns.map(txIn => validateTxIn(txIn, uTxOutList))
+  const hasValidTxIns = tx.txIns.map(txIn => validateTxIn(txIn, tx, uTxOutList))
 
   if (!hasValidTxIns) {
+    console.log(`The tx: ${tx} doesn't have valid txIns`)
     return false
   }
 
@@ -331,5 +337,6 @@ module.exports = {
   TxOut,
   Transaction,
   createCoinbaseTx,
-  processTxs
+  processTxs,
+  validateTx
 }
