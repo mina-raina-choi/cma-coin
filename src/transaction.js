@@ -1,5 +1,6 @@
 const CryptoJS = require("crypto-js"),
   EC = require("elliptic").ec
+utils = require("./utils")
 
 const ec = new EC("secp256k1")
 
@@ -66,4 +67,35 @@ const signTxIn = (tx, txInIndex, privateKey, uTxOut) => {
     return
   }
   // todo Sign the Txin
+  const key = ec.keyFromPrivate(privateKey, "hex")
+  const signature = utils.toHexString(key.sign(dataToSign).toDER())
+  return signature
+}
+
+// 이 블록체인이 갖고있는 UTxOutList, 위에 선언된 uTxOuts와 같은것
+const updateUTxOuts = (newTxs, UTxOutList) => {
+  // 새로운 txs의 outs를 utxos 리스트로 만든다.
+  const newUTxOuts = newTxs
+    .map(tx => {
+      tx.txOuts.map((txOut, index) => {
+        new UTxOut(tx.id, index, txOut.address, txOut.amount)
+      })
+    })
+    .reduce((a, b) => a.concat(b), [])
+
+  // 이미 사용된 utxo를 비운다.
+  // 50 -> 10, 40 으로 보내려고 할때,
+  // 50에 대한 정보를 지우는 중
+  // 새로운 txs의 ins를 list로
+  const spentTxOuts = newTxs
+    .map(tx => tx.txIns)
+    .reduce((a, b) => a.concat(b), [])
+    .map(txIn => new UTxOut(txIn.txOutId, txIn.txOutIndex, "", 0))
+
+  // 전체 utxo 리스트 중에서 이미 사용한 spentTxOuts를 제거
+  const resultingUTxOuts = uTxOutList
+    .filter(uTxO => !findUTxOut(uTxO.txOutId, uTxO.txOutIndex, spentTxOuts))
+    .concat(newUTxOuts)
+
+  return resultingUTxOuts
 }
