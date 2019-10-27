@@ -99,3 +99,36 @@ const updateUTxOuts = (newTxs, UTxOutList) => {
 
   return resultingUTxOuts
 }
+
+const isTxInStructureValid = txIn => {
+  // todo
+}
+
+const isTxOutStructureValid = txOut => {}
+
+// class Transaction {
+// id
+// txIns[]
+// txOuts []
+// }
+// 트랜잭션 구조 valid check
+const isTxStructureValid = tx => {
+  if (typeof tx.id !== "string") {
+    console.log("Tx Id is not valid")
+    return false
+  } else if (!(tx.txIns instanceof Array)) {
+    console.log("the txins are not an array")
+    return false
+  } else if (isTxInStructureValid) {
+    console.log("the structure of one of the txIn is not valid")
+    return false
+  } else if (!(tx.txOuts instanceof Array)) {
+    console.log("the txOuts are not an array")
+    return false
+  } else if (isTxOutStructureValid) {
+    console.log("the structure of one of the txOut is not valid")
+    return false
+  } else {
+    return true
+  }
+}
