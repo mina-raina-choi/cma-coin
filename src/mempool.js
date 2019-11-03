@@ -37,6 +37,30 @@ const isTxValidForPool = (tx, memPool) => {
   return true
 }
 
+const hasTxIn = (txIn, uTxOutList) => {
+  const foundTxIn = uTxOutList.find(
+    uTxOut => uTxOut.txOutId === txIn.txOutId && uTxOut.txOutIndex === txIn.txOutIndex
+  )
+  return foundTxIn !== undefined
+}
+
+const updateMempool = uTxOutList => {
+  const invalidTxs = []
+
+  for (const tx of memPool) {
+    for (const txIn of tx.txIns) {
+      if (!hasTxIn(txIn, uTxOutList)) {
+        invalidTxs.push(tx)
+        break
+      }
+    }
+  }
+  // 이미 처리된 트랜잭션이 있음을 의미
+  if (invalidTxs.length > 0) {
+    memPool = _.without(memPool, ...invalidTxs)
+  }
+}
+
 const addToMempool = (tx, uTxOutList) => {
   if (!validateTx(tx, uTxOutList)) {
     throw Error("This tx is invalid. Will not add it to pool")
@@ -48,5 +72,6 @@ const addToMempool = (tx, uTxOutList) => {
 
 module.exports = {
   addToMempool,
-  getUMempool
+  getUMempool,
+  updateMempool
 }

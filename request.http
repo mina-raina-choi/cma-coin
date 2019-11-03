@@ -29,7 +29,7 @@ Content-Type: application/json
 
 {
     "address": "047fa4229c331c567cf4e593e0a774d5da24f1598434d96bc62eaa01e2f65466a4c30dad0914011d47e3456014608f36f3484f7cff92e9e9040a852c627b4695a6",
-    "amount": 10
+    "amount": 100
 }
 ###
 

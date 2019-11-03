@@ -7,7 +7,7 @@ const CryptoJS = require("crypto-js"),
 
 const { getBalance, getPublicFromWallet, createTx, getPrivateFromWallet } = Wallet
 const { createCoinbaseTx, processTxs } = Transaction
-const { addToMempool, getUMempool } = Mempool
+const { addToMempool, getUMempool, updateMempool } = Mempool
 
 //   블록생성주기 10초
 const BLOCK_GENERATION_INTERVAL = 10
@@ -27,21 +27,33 @@ class Block {
   }
 }
 
+const genesisTx = {
+  txIns: [{ signature: "", txOutId: "", txOutIndex: 0 }],
+  txOuts: [
+    {
+      address:
+        "047fc4229c331c567cf4e593e0a774d5da24f1598434d96bc62eaa01e2f65466a4c30dad0914011d47e3456014608f36f3484f7cff92e9e9040a852c627b4695a6",
+      amount: 50
+    }
+  ],
+  id: "7449012b80a852dfd5516ab485494fc4139679581c30000ec7e80cf9532045db"
+}
+
 // 2. genesis block은 하드코딩
 // 첫번째 블록해시로 01570595637361This is the genesis!! 을 해시한 값을 넣어준다
 const genesisBlock = new Block(
   0,
-  "ef14c074cefb782f2170b5218ebf1122cae87e60f5f6324f0e17f4d72d1b5ea8",
+  "49f7b08d8d608b0276afea8029bf959e9abd5da809117c628b20c40ca479d6cf",
   null,
   1570963704,
-  "This is the genesis!!",
+  [genesisTx],
   0,
   0
 )
 
 let blockchain = [genesisBlock]
 
-let uTxOuts = []
+let uTxOuts = processTxs(blockchain[0].data, [], 0)
 
 // console.log(blockchain);
 
@@ -167,6 +179,9 @@ const getBlocksHash = block =>
     block.difficulty,
     block.nonce
   )
+
+// console.log(getBlocksHash(genesisBlock))
+
 // 9. 블록 구조 검증(각데이터의 타입검증)
 const isBlockStructureValid = block => {
   return (
@@ -271,6 +286,7 @@ const addBlockToChain = candidateBlock => {
     } else {
       getBlockchain().push(candidateBlock)
       uTxOuts = processedTxs
+      updateMempool(uTxOuts)
       return true
     }
     return true
