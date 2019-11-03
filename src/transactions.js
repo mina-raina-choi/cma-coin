@@ -199,8 +199,9 @@ const validateTxIn = (txIn, tx, uTxOutList) => {
   const wantedTxOut = uTxOutList.find(
     uTxO => uTxO.txOutId === txIn.txOutId && uTxO.txOutIndex === txIn.txOutIndex
   )
+  console.log("validateTxIn wantedTxOut", wantedTxOut)
 
-  if (wantedTxOut === null) {
+  if (wantedTxOut === null || wantedTxOut === undefined) {
     console.log(`Didn't find the wanted uTxOut, the tx: ${tx} is invalid`)
     return false
   } else {

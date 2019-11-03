@@ -68,11 +68,36 @@ const createTxOuts = (receiverAddress, myAddress, amount, leftoverAmount) => {
   }
 }
 
-const createTx = (receiverAddress, amount, privateKey, uTxOutList) => {
+const filterUTxOutsFromMempool = (uTxOutList, mempool) => {
+  // 멤풀에 있는 txIns를 찾아서
+  const txIns = _(mempool)
+    .map(tx => tx.txIns)
+    .flatten()
+    .value()
+
+  const removables = []
+
+  for (const uTxOut of uTxOutList) {
+    const txIn = _.find(
+      txIns,
+      txIn => txIn.txOutIndex === uTxOut.txOutIndex && txIn.txOutId === uTxOut.txOutId
+    )
+
+    // 이미 멤풀에 담긴 utxo는 삭제
+    if (txIn !== undefined) {
+      removables.push(uTxOut)
+    }
+  }
+
+  return _.without(uTxOutList, ...removables)
+}
+const createTx = (receiverAddress, amount, privateKey, uTxOutList, memPool) => {
   const myAddress = getPublicKey(privateKey)
   const myUTxOuts = uTxOutList.filter(uTxO => uTxO.address === myAddress)
 
-  const { includedUTxOuts, leftoverAmount } = findAmountInUTxOuts(amount, myUTxOuts)
+  const filteredUTxOuts = filterUTxOutsFromMempool(myUTxOuts, memPool)
+
+  const { includedUTxOuts, leftoverAmount } = findAmountInUTxOuts(amount, filteredUTxOuts)
 
   const toUnsignedTxIn = uTxOut => {
     const txIn = new TxIn()
