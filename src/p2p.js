@@ -1,14 +1,17 @@
 const WebSockets = require("ws"),
-  Blockchain = require("./blockchain")
+  Blockchain = require("./blockchain"),
+  Mempool = require("./mempool")
 
 const {
   getNewestBlock,
   isBlockStructureValid,
   addBlockToChain,
   replaceChain,
-  getBlockchain
+  getBlockchain,
+  handleIncomingTx
 } = Blockchain
 
+const { getUMempool } = Mempool
 const sockets = []
 
 const getSockets = () => sockets
@@ -23,6 +26,8 @@ const getSockets = () => sockets
 const GET_LATEST = "GET_LATEST"
 const GET_ALL = "GET_ALL"
 const BLOCKCHAIN_RESPONSE = "BLOCKCHAIN_RESPONSE"
+const REQUEST_MEMPOOL = "REQUEST_MEMPOOL"
+const MEMPOOL_RESPONSE = "MEMPOOL_RESPONSE"
 
 // Message Creators
 const getLatest = () => {
@@ -46,12 +51,29 @@ const blockchainResponse = data => {
   }
 }
 
+const getMempool = () => {
+  return {
+    type: REQUEST_MEMPOOL,
+    data: null
+  }
+}
+
+const mempoolResponse = data => {
+  return {
+    type: MEMPOOL_RESPONSE,
+    data: data
+  }
+}
+
 const startP2PServer = server => {
   const wsServer = new WebSockets.Server({ server })
   wsServer.on("connection", ws => {
     //   ws는 내 서버에 접속된 웹소켓을 의미함
     console.log(`Hello ${"Socket"}`)
     initSocketConnection(ws)
+  })
+  wsServer.on("error", () => {
+    console.log(error)
   })
   console.log(`cma-coin P2P Server running!!`)
 }
@@ -62,12 +84,10 @@ const initSocketConnection = ws => {
   handleSocketError(ws)
   // 너가 나에게 접속을 하면, 자동으로 나의 최근블록을 가져가도록
   sendMessage(ws, getLatest())
-  //   ws.on("message", data => {
-  //     console.log(data);
-  //   });
-  //   setTimeout(() => {
-  //     socket.send("welcome");
-  //   }, 5000);
+  // 커넥션이 일어나면 블록리스트도 가져가고 멤풀도 가져가고
+  setTimeout(() => {
+    sendMessage(ws, getMempool())
+  }, 1000)
 }
 
 const handleSocketMessages = ws => {
@@ -76,7 +96,6 @@ const handleSocketMessages = ws => {
     if (message === null) {
       return
     }
-    console.log("handleSocketMessages", message)
     switch (message.type) {
       // 최근 블록을 얻고 싶으면 GET_LATEST보낸다
       // GET_LATEST 메시지를 받으면 연결된 소켓에 message를 send
@@ -95,6 +114,22 @@ const handleSocketMessages = ws => {
           break
         }
         handleBlockchainResponse(receivedBlocks)
+        break
+      case REQUEST_MEMPOOL:
+        sendMessage(ws, returnMempool())
+        break
+      case MEMPOOL_RESPONSE:
+        const receivedTxs = message.data
+        if (receivedTxs === null) {
+          return
+        }
+        receivedTxs.forEach(tx => {
+          try {
+            handleIncomingTx(tx)
+          } catch (e) {
+            console.log(e)
+          }
+        })
         break
     }
   })
@@ -117,6 +152,8 @@ const sendMessageToAll = message => sockets.forEach(ws => sendMessage(ws, messag
 const responseLatest = () => blockchainResponse([getNewestBlock()])
 
 const responseAll = () => blockchainResponse(getBlockchain())
+
+const returnMempool = () => mempoolResponse(getUMempool())
 
 // socket 연결 끊어지거나 에러 발생시 close
 const handleSocketError = ws => {
@@ -173,6 +210,8 @@ const handleBlockchainResponse = receivedBlocks => {
 // 연결된 모든 소켓에 나의 최신블록을 알림
 const broadcastNewBlock = () => sendMessageToAll(responseLatest())
 
+const broadcastMempool = () => sendMessageToAll(returnMempool())
+
 // newPeer is URL that websocket is running on
 const connectToPeers = newPeer => {
   const ws = new WebSockets(newPeer)
@@ -185,5 +224,6 @@ const connectToPeers = newPeer => {
 module.exports = {
   startP2PServer,
   connectToPeers,
-  broadcastNewBlock
+  broadcastNewBlock,
+  broadcastMempool
 }

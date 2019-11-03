@@ -240,15 +240,25 @@ const isChainValid = candidateChain => {
 
   if (!isGenesisValid(candidateChain[0])) {
     console.log("The candidate chain's genesisblock is not the same as our genesisblock")
-    return false
+    return null
   }
 
-  for (let i = 1; i < candidateChain.length; i++) {
-    if (!isBlockValid(candidateChain[i], candidateChain[i - 1])) {
-      return false
+  // 새로운체인에서 온 utxo
+  let foreignUTxOuts = []
+
+  for (let i = 0; i < candidateChain.length; i++) {
+    const currentBlock = candidateChain[i]
+    if (i !== 0 && !isBlockValid(currentBlock, candidateChain[i - 1])) {
+      return null
+    }
+
+    foreignUTxOuts = processTxs(currentBlock.data, foreignUTxOuts, currentBlock.index)
+
+    if (foreignUTxOuts === null) {
+      return null
     }
   }
-  return true
+  return foreignUTxOuts
 }
 
 // 난이도가 추가됐으므로
@@ -263,12 +273,17 @@ const sumDifficulty = anyBlockchain =>
 
 // 11. 만약 새로 들어온 체인이 유효하다면 replace해주는 기능필요
 const replaceChain = candidateChain => {
+  const foreignUTxOuts = isChainValid(candidateChain)
+  const validChain = foreignUTxOuts !== null
   if (
-    isChainValid(candidateChain) &&
+    validChain &&
     sumDifficulty(candidateChain) > sumDifficulty(getBlockchain())
     // candidateChain.length > getBlockchain().length
   ) {
     blockchain = candidateChain
+    uTxOuts = foreignUTxOuts
+    updateMempool(uTxOuts)
+    require("./p2p").broadcastNewBlock()
     return true
   } else {
     return false
@@ -303,7 +318,12 @@ const getAccountBalance = () => getBalance(getPublicFromWallet(), uTxOuts)
 const sendTx = (address, amount) => {
   const tx = createTx(address, amount, getPrivateFromWallet(), getUTxOutList(), getUMempool())
   addToMempool(tx, getUTxOutList())
+  require("./p2p").broadcastMempool()
   return tx
+}
+
+const handleIncomingTx = tx => {
+  addToMempool(tx, getUTxOutList())
 }
 
 // http://happinessoncode.com/2018/05/20/nodejs-exports-and-module-exports/
@@ -318,7 +338,8 @@ module.exports = {
   addBlockToChain,
   replaceChain,
   getAccountBalance,
-  sendTx
+  sendTx,
+  handleIncomingTx
 }
 
 // exports.getBlockchain = getBlockchain;
