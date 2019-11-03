@@ -57,7 +57,11 @@ const getTxId = tx => {
 
 // utxo를 갖고 있는지 체크
 const findUTxOut = (txOutId, txOutIndex, uTxOutList) => {
-  return uTxOutList.find(uTxOut => uTxOut.txOutId === txOutId && uTxOut.txOutIndex === txOutIndex)
+  const ret = uTxOutList.find(
+    uTxOut => uTxOut.txOutId === txOutId && uTxOut.txOutIndex === txOutIndex
+  )
+
+  return ret
 }
 
 const signTxIn = (tx, txInIndex, privateKey, uTxOutList) => {
@@ -76,7 +80,6 @@ const signTxIn = (tx, txInIndex, privateKey, uTxOutList) => {
     return false
   }
   const key = ec.keyFromPrivate(privateKey, "hex")
-  console.log("dataToSign", dataToSign)
   const signature = utils.toHexString(key.sign(dataToSign).toDER())
   return signature
 }
@@ -150,7 +153,6 @@ const isAddressValid = address => {
 }
 
 const isTxOutStructureValid = txOut => {
-  console.log("isTxOutStructureValid", txOut)
   if (txOut === null) {
     return false
   } else if (typeof txOut.address !== "string") {
@@ -208,7 +210,9 @@ const validateTxIn = (txIn, tx, uTxOutList) => {
   }
 }
 
-const getAmountInTxIn = (txIn, uTxOutList) => findUTxOut(txIn.id, txIn.index, uTxOutList).amount
+// txIn의 객체형태 id, index
+const getAmountInTxIn = (txIn, uTxOutList) =>
+  findUTxOut(txIn.txOutId, txIn.txOutIndex, uTxOutList).amount
 
 const validateTx = (tx, uTxOutList) => {
   if (!isTxStructureValid(tx)) {
@@ -226,7 +230,9 @@ const validateTx = (tx, uTxOutList) => {
   }
 
   const amountInTxIns = tx.txIns
-    .map(txIn => getAmountInTxIn(txIn, uTxOutList))
+    .map(txIn => {
+      return getAmountInTxIn(txIn, uTxOutList)
+    })
     .reduce((a, b) => a + b, 0)
 
   const amountInTxOuts = tx.txOuts.map(txOut => txOut.amount).reduce((a, b) => a + b, 0)
