@@ -73,7 +73,7 @@ const startP2PServer = server => {
     initSocketConnection(ws)
   })
   wsServer.on("error", () => {
-    console.log(error)
+    console.log("error")
   })
   console.log(`cma-coin P2P Server running!!`)
 }
@@ -86,7 +86,12 @@ const initSocketConnection = ws => {
   sendMessage(ws, getLatest())
   // 커넥션이 일어나면 블록리스트도 가져가고 멤풀도 가져가고
   setTimeout(() => {
-    sendMessage(ws, getMempool())
+    sendMessageToAll(ws, getMempool())
+  }, 1000)
+  setInterval(() => {
+    if (sockets.includes(ws)) {
+      sendMessage(ws, "")
+    }
   }, 1000)
 }
 
@@ -218,6 +223,12 @@ const connectToPeers = newPeer => {
   ws.on("open", () => {
     console.log(`open Socket`)
     initSocketConnection(ws)
+  })
+  ws.on("error", () => {
+    console.log(`connection failed`)
+  })
+  ws.on("close", () => {
+    console.log(`connection failed`)
   })
 }
 

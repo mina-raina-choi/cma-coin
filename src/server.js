@@ -4,11 +4,12 @@ const express = require("express"),
   Blockchain = require("./blockchain"),
   P2P = require("./p2p"),
   wallet = require("./wallet"),
-  Mempool = require("./mempool")
+  Mempool = require("./mempool"),
+  _ = require("lodash")
 
-const { getBlockchain, createNewBlock, getAccountBalance, sendTx } = Blockchain
+const { getBlockchain, createNewBlock, getAccountBalance, sendTx, getUTxOutList } = Blockchain
 const { startP2PServer, connectToPeers } = P2P
-const { initWallet, getPublicFromWallet } = wallet
+const { initWallet, getPublicFromWallet, getBalance } = wallet
 const { getUMempool } = Mempool
 
 // Don't forget about typing 'export HTTP_PORT=4000' in your console
@@ -48,6 +49,34 @@ app.get("/me/address", (req, res) => {
   res.send(getPublicFromWallet())
 })
 
+app.get("/blocks/:hash", (req, res) => {
+  const {
+    params: { hash }
+  } = req
+  const block = _.find(getBlockchain(), { hash })
+  if (block === undefined) {
+    res.status(400).send("Block not found")
+  } else {
+    res.send(block)
+  }
+})
+
+app.get("/transactions/:id", (req, res) => {
+  const {
+    params: { id }
+  } = req
+  const tx = _(getBlockchain())
+    .map(blocks => blocks.data)
+    .flatten()
+    .find({ id: id })
+
+  if (tx === undefined) {
+    res.status(400).send("Transaction not found")
+  } else {
+    res.send(tx)
+  }
+})
+
 app
   .route("/transactions")
   .get((req, res) => {
@@ -68,6 +97,14 @@ app
       res.status(400).send(e.message)
     }
   })
+
+app.get("/address/:address", (req, res) => {
+  const {
+    params: { address }
+  } = req
+  const balance = getBalance(address, getUTxOutList())
+  res.send({ balance })
+})
 
 const server = app.listen(PORT, () => console.log(`cma-coin HTTP Server running on ${PORT}`))
 
