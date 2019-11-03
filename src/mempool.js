@@ -5,6 +5,7 @@ const { validateTx } = Transactions
 
 let memPool = []
 
+const getUMempool = () => _.cloneDeep(memPool)
 // 멤풀에 있는 모든 txIns 배열로 리턴
 const getTxInsInPool = memPool => {
   return _(memPool)
@@ -46,5 +47,6 @@ const addToMempool = (tx, uTxOutList) => {
 }
 
 module.exports = {
-  addToMempool
+  addToMempool,
+  getUMempool
 }

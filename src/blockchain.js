@@ -7,7 +7,7 @@ const CryptoJS = require("crypto-js"),
 
 const { getBalance, getPublicFromWallet, createTx, getPrivateFromWallet } = Wallet
 const { createCoinbaseTx, processTxs } = Transaction
-const { addToMempool } = Mempool
+const { addToMempool, getUMempool } = Mempool
 
 //   블록생성주기 10초
 const BLOCK_GENERATION_INTERVAL = 10
@@ -66,7 +66,7 @@ const createHash = (index, prevHash, timestamp, data, difficulty, nonce) =>
 
 const createNewBlock = () => {
   const coinbaseTx = createCoinbaseTx(getPublicFromWallet(), getNewestBlock().index + 1)
-  const blockData = [coinbaseTx]
+  const blockData = [coinbaseTx].concat(getUMempool())
   return createNewRawBlock(blockData)
 }
 
