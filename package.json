@@ -16,7 +16,7 @@
     "lodash": "^4.17.15",
     "morgan": "^1.9.1",
     "nodemon": "^1.19.3",
-    "ws": "^7.1.2"
+    "ws": "^7.4.6"
   },
   "scripts": {
     "dev": "nodemon src/server.js"
